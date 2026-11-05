@@ -40,7 +40,7 @@ var World = class World {
   }
 
   // accumulators the DataManager drains once per reporting period
-  resetPeriod() { this.period = { peaks: [], jumpOffs: 0, intercepts: 0 }; }
+  resetPeriod() { this.period = { peaks: [], chains: [], jumpOffs: 0, intercepts: 0 }; }
 
   restTime() { return -PARAMETERS.restMean * Math.log(1 - this.rng()); }
 
@@ -94,6 +94,7 @@ var World = class World {
     f.restUntil = this.time + this.restTime();
     this.flights++;
     this.period.peaks.push(f.flightPeak);
+    this.period.chains.push(f.flightJumpOffs);
     if (f.flightPeak > this.record) this.record = f.flightPeak;
     if (f.flightJumpOffs > this.recordChain) this.recordChain = f.flightJumpOffs;
   }

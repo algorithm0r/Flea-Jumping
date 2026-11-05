@@ -4,7 +4,8 @@
 // datamanager runs headless.
 //
 // Flights are few per period, so the per-flight reports (mean peak, jump-offs per flight,
-// the peak histogram) are taken over a sliding window of the last WINDOW samples.
+// the longest chain, the peak histogram) are taken over a sliding window of the last WINDOW
+// samples. A flight counts when it lands; its chain is its jump-offs between ground and ground.
 var DM_WINDOW = 10;
 
 var DataManager = class DataManager {
@@ -12,7 +13,8 @@ var DataManager = class DataManager {
     this.worlds = worlds;                 // [random, strategic]
     this.series = worlds.map(() => ({
       record: [], best: [], meanPeak: [], perFlight: [], hist: [],
-      _peaks: [], _offs: [],              // sliding window: one entry per sample
+      chainRecord: [], chainBest: [],     // most jump-offs in one flight: all time / in window
+      _peaks: [], _chains: [],            // sliding window: one entry per sample
     }));
     this.oneJump = [];                    // the 1 H reference line, same length as the rest
   }
@@ -25,16 +27,18 @@ var DataManager = class DataManager {
 
   sample(w, s) {
     const P = PARAMETERS, p = w.period;
-    s._peaks.push(p.peaks); s._offs.push(p.jumpOffs);
-    if (s._peaks.length > DM_WINDOW) { s._peaks.shift(); s._offs.shift(); }
+    s._peaks.push(p.peaks); s._chains.push(p.chains);
+    if (s._peaks.length > DM_WINDOW) { s._peaks.shift(); s._chains.shift(); }
     w.resetPeriod();
 
-    let n = 0, sum = 0, offs = 0, best = 0;
+    let n = 0, sum = 0, offs = 0, best = 0, chain = 0;
     const bins = new Array(P.histBins).fill(0);
     for (let i = 0; i < s._peaks.length; i++) {
-      offs += s._offs[i];
-      for (const h of s._peaks[i]) {
+      const peaks = s._peaks[i], chains = s._chains[i];
+      for (let j = 0; j < peaks.length; j++) {
+        const h = peaks[j];
         n++; sum += h; if (h > best) best = h;
+        offs += chains[j]; if (chains[j] > chain) chain = chains[j];
         bins[Math.min(P.histBins - 1, Math.floor(h / P.histTop * P.histBins))]++;
       }
     }
@@ -43,6 +47,8 @@ var DataManager = class DataManager {
     s.meanPeak.push(n ? sum / n : null);
     s.perFlight.push(n ? offs / n : null);
     s.hist.push(bins);
+    s.chainRecord.push(w.recordChain);
+    s.chainBest.push(n ? chain : null);
   }
 
   draw() {}

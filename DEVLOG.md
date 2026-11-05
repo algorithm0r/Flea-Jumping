@@ -3,6 +3,18 @@ Newest entry on top. **Append only — never edit past entries.**
 
 <!-- append new entries above this line -->
 
+## 2026-11-05 — measure: most jump-offs in one flight
+**Done:** what Chris actually asked for (the cap above was a misreading he decided to keep as a
+mechanism). Each landed flight now reports its chain, meaning its jump-offs between ground and
+ground. Two new lines per world: the most jump-offs in one flight, all time, and over the last
+10 time units. "Mean jump-offs per flight" is now taken from landed flights' chains rather than
+from jump-off events in the window.
+**Changed:** `src/world.js` (period.chains), `src/datamanager.js`, `src/ui.js`, `index.html`.
+**State:** smoke PASS; in the browser pane after 200 time units at defaults, the chart's
+all-time chain equals the world's own count (random 9, strategic 10), and mean jump-offs per
+flight are 0.63 / 0.99. No console errors.
+**Next:** unchanged: test the mid-air re-plan guess.
+
 ## 2026-11-05 — cap on jump-offs per flight
 **Done:** `maxJumpOffs` (none / 1 / 2 / 3 / 5 / 10 / unlimited, default unlimited): jump-offs a
 flea may make before it touches ground again. A flea at its cap passes by the fleas it meets

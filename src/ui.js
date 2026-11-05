@@ -34,6 +34,8 @@ function wireCharts(dm, worlds) {
   $('best').data = { dx: dx, series: pair('best').concat([{ label: 'one jump', values: dm.oneJump, color: 'var(--cb-muted)' }]) };
   $('mean').data = { dx: dx, series: pair('meanPeak') };
   $('offs').data = { dx: dx, series: pair('perFlight') };
+  $('chainRecord').data = { dx: dx, series: pair('chainRecord') };
+  $('chainBest').data = { dx: dx, series: pair('chainBest') };
   $('histR').data = { dx: dx, columns: dm.series[0].hist };
   $('histS').data = { dx: dx, columns: dm.series[1].hist };
   for (const id of ['histR', 'histS']) { $(id).setAttribute('hi', PARAMETERS.histTop); }
