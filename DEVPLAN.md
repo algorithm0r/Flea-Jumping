@@ -19,7 +19,8 @@
 - **Jump-off.** Two airborne fleas touch at distance 2r. The higher one makes a brand-new jump
   from the contact point (old velocity replaced). With `recoil`, the lower one takes the equal
   and opposite velocity change (equal masses) and is driven down. A pair can't re-touch for
-  `cooldown`; a flea makes at most one contact per tick.
+  `cooldown`; a flea makes at most one contact per tick. A flea that has used `maxJumpOffs`
+  this flight passes by instead of jumping off (others can still jump off it).
 - **Random (control).** Rest ~ Exp(restMean), then a random jump: height ~ U(minHeight, 1),
   vx ~ U(−vxMax, vxMax). Off another flea: another random jump (or full height with
   `controlFullPush`, which isolates the effect of aiming from the effect of pushing hard).
@@ -56,6 +57,8 @@
 ## Backlog
 *Planned work too small for a stage. One line each, led by its type (`fix:` / `feat:` /
 `idea:`). When a stage takes an item up, strike it: `~~item~~ → **Stage N**`.*
+- [ ] idea: a jump-off cap of 1 raises the strategic mean peak (1.09 → 1.49 H); check whether
+      mid-air re-plans are failing gambles (log predicted vs realised contacts)
 - [ ] idea: lookahead 2 gave no gain at default density (2026-11-05) — test it at high density
 - [ ] idea: strategic fleas could also choose WHEN to jump (a launch-delay search), not only how
 - [ ] feat: draw the record flight's trajectory as a trail

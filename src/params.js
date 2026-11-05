@@ -20,6 +20,9 @@ var PARAMETERS = {
   // --- the jump-off ---
   recoil: true,         // the lower flea is kicked down by the upper flea's push (equal masses)
   cooldown: 0.3,        // a pair that just touched can't touch again for this long
+  maxJumpOffs: 1000,    // jump-offs a flea may make in one flight before it touches ground again;
+                        // a flea at its cap passes by the fleas it meets instead of jumping off
+                        // them, though they can still jump off it (0 = none, 1000 = no cap)
   controlFullPush: false, // control world: jump off at full height (as strategic fleas do when
                           // they have no target) instead of a random jump. Isolates aiming.
 
@@ -49,6 +52,8 @@ var PARAM_SCHEMA = [
   { key: 'restMean', label: 'Mean rest', min: 0, max: 5, step: 0.1 },
   { key: 'lookahead', label: 'Lookahead', options: [{ value: 1, label: '1 jump' }, { value: 2, label: '2 jumps' }] },
   { key: 'patience', label: 'Patience', min: 0, max: 10, step: 0.5 },
+  { key: 'maxJumpOffs', label: 'Max jump-offs per flight', options: [
+    { value: 0, label: 'none' }, 1, 2, 3, 5, 10, { value: 1000, label: 'unlimited' }] },
   { key: 'recoil', label: 'Recoil' },
   { key: 'controlFullPush', label: 'Random fleas push off at full height' },
   { key: 'updatesPerDraw', label: 'Speed', min: 1, max: 40, step: 1 },

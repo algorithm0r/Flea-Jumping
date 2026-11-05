@@ -18,6 +18,11 @@
 // The value of a plan is the height it gets the flea to: the contact height plus one full
 // jump (H = 1). With lookahead 2, the value also counts the best intercept the flea could
 // plan from the contact point, so a lower first hit that sets up a higher second one wins.
+//
+// THE CAP: `jumpsLeft` is how many jump-offs the flea may still make before it lands
+// (PARAMETERS.maxJumpOffs per flight). With none left there is nothing to plan, and lookahead
+// stops at the cap. A flea at ITS cap that we would meet from below passes by us instead of
+// jumping off us, so the check does not count that contact against the plan.
 // ════════════════════════════════════════════════════════════════════════════════════
 
 var PLAN_MAX_CHECKS = 12;   // candidates verified per plan, best-first
@@ -26,7 +31,8 @@ var PLAN_MAX_CHECKS = 12;   // candidates verified per plan, best-first
  * Best intercept for `self` launching from (x0, y0) at time T0, or null.
  * @returns {{vx:number, vy:number, value:number, targetId:number}|null}
  */
-function planJump(world, self, x0, y0, T0, depth, excludeId) {
+function planJump(world, self, x0, y0, T0, depth, excludeId, jumpsLeft) {
+  if (jumpsLeft < 1) return null;
   const P = PARAMETERS, W = world.width;
   const vxm = vxMax();
   const aim = 1.5 * P.fleaRadius;
@@ -62,8 +68,8 @@ function planJump(world, self, x0, y0, T0, depth, excludeId) {
     const hit = firstContact(world, self, x0, y0, c.vx, c.vy, T0, excludeId);
     if (!hit || !hit.onTop) continue;
     let value = Math.max(hit.peakBefore, hit.y + 1);
-    if (depth > 1) {
-      const sub = planJump(world, self, hit.x, hit.y, hit.T, depth - 1, hit.id);
+    if (depth > 1 && jumpsLeft > 1) {
+      const sub = planJump(world, self, hit.x, hit.y, hit.T, depth - 1, hit.id, jumpsLeft - 1);
       if (sub && sub.value > value) value = sub.value;
     }
     if (!best || value > best.value) best = { vx: c.vx, vy: c.vy, value: value, targetId: hit.id };
@@ -94,6 +100,7 @@ function firstContact(world, self, x0, y0, vx, vy, T0, excludeId) {
       const o = others[i];
       const dx = wrapDx(o.xAt(T) - x, W), dy = y - o.yAt(T);
       if (dx * dx + dy * dy < d2) {
+        if (dy <= 0 && o.flightJumpOffs >= P.maxJumpOffs) continue;   // it's capped: passes by
         return { id: o.id, T: T, x: wrapX(x, W), y: y, onTop: dy > 0, peakBefore: peak };
       }
     }

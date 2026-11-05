@@ -48,7 +48,7 @@ const line = (name, r) => console.log(
   '  >1H=' + (100 * r.above1).toFixed(1) + '%' +
   '  record=' + r.w.record.toFixed(3) + '  chain=' + r.w.recordChain + '  (' + r.ms + ' ms)');
 console.log('flea-jumping smoke: ' + units + ' time units, ' + P.nFleas + ' fleas, width ' +
-  P.worldWidth + ', r ' + P.fleaRadius + ', lookahead ' + P.lookahead + ', recoil ' + P.recoil + ', seed ' + P.seed);
+  P.worldWidth + ', r ' + P.fleaRadius + ', lookahead ' + P.lookahead + ', cap ' + P.maxJumpOffs + ', recoil ' + P.recoil + ', seed ' + P.seed);
 line('random', R);
 line('strategic', S);
 
@@ -56,6 +56,9 @@ line('strategic', S);
 // with jump-offs; (2) both worlds actually ran flights.
 const ok1 = [R, S].every((r) => r.w.jumpOffs > 0 || r.w.record <= 1 + 1e-9);
 const ok2 = R.n > 0 && S.n > 0;
-const ok = ok1 && ok2;
-console.log('invariants: height-needs-jump-offs=' + ok1 + ' flights-ran=' + ok2 + ' -> ' + (ok ? 'PASS' : 'FAIL'));
+// (3) no flight makes more jump-offs than the cap allows
+const ok3 = [R, S].every((r) => r.w.recordChain <= P.maxJumpOffs);
+const ok = ok1 && ok2 && ok3;
+console.log('invariants: height-needs-jump-offs=' + ok1 + ' flights-ran=' + ok2 +
+  ' chain<=cap=' + ok3 + ' -> ' + (ok ? 'PASS' : 'FAIL'));
 process.exit(ok ? 0 : 1);

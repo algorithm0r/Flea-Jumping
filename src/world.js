@@ -12,7 +12,8 @@
 //               aim at it jumps straight up at full height.
 //
 // THE JUMP-OFF: when two airborne fleas touch, the higher one makes a brand-new jump from
-// that point (its old velocity is replaced). With recoil on, the lower one takes the equal
+// that point (its old velocity is replaced), unless it has already used its maxJumpOffs for
+// this flight; then the two pass by each other. With recoil on, the lower one takes the equal
 // and opposite change in velocity (equal masses), so it is driven down.
 var World = class World {
   constructor(strategic, seed) {
@@ -77,7 +78,7 @@ var World = class World {
       if (f.airborne || T < f.restUntil) continue;
       if (!this.strategic) { this.jumpFromGround(f, this.randomVelocity(), -1); continue; }
       if ((this.tick + f.id) % P.planEvery !== 0) continue;
-      const plan = planJump(this, f, f.x, 0, T, P.lookahead, -1);
+      const plan = planJump(this, f, f.x, 0, T, P.lookahead, -1, P.maxJumpOffs);
       if (plan) { this.jumpFromGround(f, plan, plan.targetId); this.period.intercepts++; }
       else if (T - f.restUntil >= P.patience) this.jumpFromGround(f, this.randomVelocity(), -1);
     }
@@ -112,7 +113,9 @@ var World = class World {
         if (dx * dx + dy * dy >= d2) continue;
         if (a.lastPartner === b.id && T - a.lastContact < P.cooldown) continue;
         if (b.lastPartner === a.id && T - b.lastContact < P.cooldown) continue;
-        if (dy > 0) this.jumpOff(b, a, T); else this.jumpOff(a, b, T);
+        const upper = dy > 0 ? b : a, lower = dy > 0 ? a : b;
+        if (upper.flightJumpOffs >= P.maxJumpOffs) continue;   // capped: they pass by each other
+        this.jumpOff(upper, lower, T);
         touched.add(a.id); touched.add(b.id);
         break;
       }
@@ -123,7 +126,9 @@ var World = class World {
     const P = PARAMETERS;
     let v = null;
     if (this.strategic) {
-      const plan = planJump(this, upper, upper.x, upper.y, T, P.lookahead, lower.id);
+      // this jump-off uses one; plan with what remains after it
+      const left = P.maxJumpOffs - upper.flightJumpOffs - 1;
+      const plan = planJump(this, upper, upper.x, upper.y, T, P.lookahead, lower.id, left);
       // only worth it if it beats the fallback below: straight up at full height
       if (plan && plan.value > upper.y + 1 + 1e-6) { v = plan; upper.target = plan.targetId; this.period.intercepts++; }
       else { v = { vx: (2 * this.rng() - 1) * vxMax(), vy: VY_MAX }; upper.target = -1; }
