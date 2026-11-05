@@ -19,6 +19,11 @@
 //   height  — one flea each time a flea reaches heightK·H, at most once per flight
 //   record  — one flea each time a flight lands with a new height record
 //
+// THE AIR GRID: every tick the airborne fleas are binned by x into cells at least 2r wide, so
+// a contact can only be with a flea in the same or the next cell, and the planner can ask for
+// the fleas near a point instead of scanning everyone. This is what makes thousands of fleas
+// affordable; it changes no rule.
+//
 // THE JUMP-OFF: when two airborne fleas touch, the higher one makes a brand-new jump from
 // that point (its old velocity is replaced), unless it has already used its maxJumpOffs for
 // this flight; then the two pass by each other. With recoil on, the lower one takes the equal
@@ -48,7 +53,10 @@ var World = class World {
     this.lastArrival = 0;     // trickle clock
     this.pendingFleas = 0;    // earned this tick, added at the end of it
     this.added = { trickle: 0, height: 0, record: 0 };
+    this.grid = null;
+    this.maxAirVx = 0;        // fastest sideways speed in the air (bounds how far anyone drifts)
     this.resetPeriod();
+    this.rebuildGrid();
   }
 
   // accumulators the DataManager drains once per reporting period
@@ -84,6 +92,7 @@ var World = class World {
       else if (f.y > maxY) maxY = f.y;
     }
     this.maxY = maxY;
+    this.rebuildGrid();
 
     // 2. mid-air contacts: the higher flea jumps off the lower one
     this.collide(T);
@@ -117,6 +126,49 @@ var World = class World {
   jumpFromGround(f, v, target) {
     f.flightPeak = 0; f.flightJumpOffs = 0; f.reachedK = false; f.target = target;
     f.launch(f.x, 0, v.vx, v.vy, this.time);
+    this.gridAdd(f);   // visible to the planners still deciding this tick
+  }
+
+  // ── the air grid ──────────────────────────────────────────────────────────────
+  rebuildGrid() {
+    const P = PARAMETERS, W = this.width;
+    const n = Math.max(1, Math.min(8192, Math.floor(W / Math.max(2 * P.fleaRadius, 0.25))));
+    if (!this.grid || this.grid.n !== n) {
+      this.grid = { n: n, w: W / n, cells: Array.from({ length: n }, () => []) };
+    } else {
+      for (const c of this.grid.cells) c.length = 0;
+    }
+    this.maxAirVx = 0;
+    for (const f of this.fleas) if (f.airborne) this.gridAdd(f);
+  }
+
+  cellOf(x) { return Math.min(this.grid.n - 1, Math.floor(wrapX(x, this.width) / this.grid.w)); }
+
+  gridAdd(f) {
+    this.grid.cells[this.cellOf(f.x)].push(f);
+    this.noteVx(f);
+  }
+
+  noteVx(f) { const v = Math.abs(f.avx); if (v > this.maxAirVx) this.maxAirVx = v; }
+
+  /** Airborne fleas within R of x (as of this tick), nearest cells first. Stops widening once
+      it holds `max` fleas, so a crowd costs no more than the planner's attention span. */
+  near(x, R, max) {
+    const g = this.grid, n = g.n, out = [];
+    const c0 = this.cellOf(x);
+    const span = Math.min(Math.ceil(R / g.w) + 1, Math.floor(n / 2));
+    for (const f of g.cells[c0]) out.push(f);
+    for (let k = 1; k <= span && out.length < max; k++) {
+      const a = (c0 + k) % n, b = (c0 - k + n) % n;
+      for (const f of g.cells[a]) out.push(f);
+      if (b !== a) for (const f of g.cells[b]) out.push(f);
+    }
+    if (out.length > max) {   // a crowded cell overshoots: keep the nearest `max`
+      const W = this.width;
+      out.sort((p, q) => Math.abs(wrapDx(p.x - x, W)) - Math.abs(wrapDx(q.x - x, W)));
+      out.length = max;
+    }
+    return out;
   }
 
   land(f) {
@@ -132,28 +184,36 @@ var World = class World {
     if (f.flightJumpOffs > this.recordChain) this.recordChain = f.flightJumpOffs;
   }
 
+  // Each flea is checked against the rest of its cell and the next cell along the ring.
   collide(T) {
-    const P = PARAMETERS, W = this.width;
-    const d2 = 4 * P.fleaRadius * P.fleaRadius;
-    const air = this.fleas.filter((f) => f.airborne);
-    const touched = new Set();   // one contact per flea per tick
-    for (let i = 0; i < air.length; i++) {
-      const a = air[i];
-      if (touched.has(a.id)) continue;
-      for (let j = i + 1; j < air.length; j++) {
-        const b = air[j];
-        if (touched.has(b.id)) continue;
-        const dx = wrapDx(b.x - a.x, W), dy = b.y - a.y;
-        if (dx * dx + dy * dy >= d2) continue;
-        if (a.lastPartner === b.id && T - a.lastContact < P.cooldown) continue;
-        if (b.lastPartner === a.id && T - b.lastContact < P.cooldown) continue;
-        const upper = dy > 0 ? b : a, lower = dy > 0 ? a : b;
-        if (upper.flightJumpOffs >= P.maxJumpOffs) continue;   // capped: they pass by each other
-        this.jumpOff(upper, lower, T);
-        touched.add(a.id); touched.add(b.id);
-        break;
+    const g = this.grid, n = g.n;
+    for (let c = 0; c < n; c++) {
+      const A = g.cells[c], B = n > 1 ? g.cells[(c + 1) % n] : null;
+      for (let i = 0; i < A.length; i++) {
+        const a = A[i];
+        if (a.touchedTick === this.tick || !a.airborne) continue;
+        if (!this.contactIn(a, A, i + 1, T) && B) this.contactIn(a, B, 0, T);
       }
     }
+  }
+
+  contactIn(a, list, from, T) {
+    const P = PARAMETERS, W = this.width;
+    const d2 = 4 * P.fleaRadius * P.fleaRadius;
+    for (let j = from; j < list.length; j++) {
+      const b = list[j];
+      if (b === a || b.touchedTick === this.tick || !b.airborne) continue;
+      const dx = wrapDx(b.x - a.x, W), dy = b.y - a.y;
+      if (dx * dx + dy * dy >= d2) continue;
+      if (a.lastPartner === b.id && T - a.lastContact < P.cooldown) continue;
+      if (b.lastPartner === a.id && T - b.lastContact < P.cooldown) continue;
+      const upper = dy > 0 ? b : a, lower = dy > 0 ? a : b;
+      if (upper.flightJumpOffs >= P.maxJumpOffs) continue;   // capped: they pass by each other
+      this.jumpOff(upper, lower, T);
+      a.touchedTick = b.touchedTick = this.tick;
+      return true;
+    }
+    return false;
   }
 
   jumpOff(upper, lower, T) {
@@ -174,6 +234,7 @@ var World = class World {
       lower.target = -1;   // its plan, if any, is spoiled
     }
     upper.launch(upper.x, upper.y, v.vx, v.vy, T);
+    this.noteVx(upper); this.noteVx(lower);
     upper.flightJumpOffs++;
     upper.flashUntil = T + 0.4;
     upper.lastPartner = lower.id; upper.lastContact = T;

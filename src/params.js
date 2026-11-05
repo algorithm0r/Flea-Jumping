@@ -39,6 +39,7 @@ var PARAMETERS = {
   patience: 2.0,        // a ready flea that finds no intercept for this long jumps at random
   planEvery: 4,         // ticks between a waiting flea's re-plans (cost control)
   planStep: 0.05,       // time resolution of the intercept search
+  planMaxTracked: 64,   // attention span: most airborne fleas a planner considers (nearest first)
 
   // --- engine ---
   dt: 0.02,             // sim time per tick
@@ -52,8 +53,8 @@ var PARAMETERS = {
 
 // Drives the control strip (CB.sim.controls). One entry per live-tunable.
 var PARAM_SCHEMA = [
-  { key: 'nFleas', label: 'Starting fleas', min: 5, max: 300, step: 5, resets: true },
-  { key: 'worldWidth', label: 'Ground length (H)', min: 2, max: 60, step: 1, resets: true },
+  { key: 'nFleas', label: 'Starting fleas', min: 5, max: 10000, step: 5, resets: true },
+  { key: 'worldWidth', label: 'Ground length (H)', min: 2, max: 2000, step: 1, resets: true },
   { key: 'fleaRadius', label: 'Flea radius (H)', min: 0.02, max: 0.3, step: 0.01 },
   { key: 'maxRange', label: 'Max jump range (H)', min: 0, max: 6, step: 0.1 },
   { key: 'minHeight', label: 'Min random height (H)', min: 0, max: 1, step: 0.05 },
@@ -69,7 +70,7 @@ var PARAM_SCHEMA = [
   { key: 'growOnHeight', label: 'Add a flea at height k' },
   { key: 'heightK', label: 'k (H)', min: 1, max: 6, step: 0.25 },
   { key: 'growOnRecord', label: 'Add a flea on each new record' },
-  { key: 'maxFleas', label: 'Max fleas', min: 10, max: 400, step: 10 },
+  { key: 'maxFleas', label: 'Max fleas', min: 10, max: 10000, step: 10 },
   { key: 'updatesPerDraw', label: 'Speed', min: 1, max: 40, step: 1 },
   { key: 'seed', label: 'Seed', min: 1, max: 100, step: 1, resets: true },
 ];

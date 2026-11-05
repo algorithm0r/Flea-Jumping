@@ -27,6 +27,16 @@
 
 var PLAN_MAX_CHECKS = 12;   // candidates verified per plan, best-first
 
+// Who a planning flea considers: the airborne fleas near enough to meet within its flight,
+// taken from the world's air grid nearest-first, up to PARAMETERS.planMaxTracked. Below that
+// number this is everyone who could matter, so the plan is exact; in a dense crowd it is an
+// attention limit, and the farthest fleas in range go unwatched.
+function plannerField(world, x0, T0, tau) {
+  const P = PARAMETERS;
+  const R = vxMax() * tau + world.maxAirVx * (T0 - world.time + tau) + 2 * P.fleaRadius;
+  return world.near(x0, R, P.planMaxTracked);
+}
+
 /**
  * Best intercept for `self` launching from (x0, y0) at time T0, or null.
  * @returns {{vx:number, vy:number, value:number, targetId:number}|null}
@@ -38,9 +48,10 @@ function planJump(world, self, x0, y0, T0, depth, excludeId, jumpsLeft) {
   const aim = 1.5 * P.fleaRadius;
   const tauMax = (VY_MAX + Math.sqrt(VY_MAX * VY_MAX + 2 * GRAVITY * y0)) / GRAVITY;
   const reach = vxm * tauMax + 2 * P.fleaRadius;
+  const field = plannerField(world, x0, T0, tauMax);
 
   const cands = [];
-  for (const o of world.fleas) {
+  for (const o of field) {
     if (o === self || !o.airborne || o.id === excludeId) continue;
     // cheap reject: too far away horizontally for either of us to close the gap in time
     if (Math.abs(wrapDx(o.x - x0, W)) > reach + Math.abs(o.avx) * tauMax) continue;
@@ -53,19 +64,22 @@ function planJump(world, self, x0, y0, T0, depth, excludeId, jumpsLeft) {
       if (vy < 0 || vy > VY_MAX) continue;
       const vx = wrapDx(o.xAt(T) - x0, W) / tau;
       if (vx > vxm || vx < -vxm) continue;
-      cands.push({ vx: vx, vy: vy, h: ty });
+      // keep only the PLAN_MAX_CHECKS highest, in order (a full sort is the hot spot in crowds)
+      if (cands.length === PLAN_MAX_CHECKS && ty <= cands[PLAN_MAX_CHECKS - 1].h) continue;
+      let i = cands.length < PLAN_MAX_CHECKS ? cands.length : PLAN_MAX_CHECKS - 1;
+      while (i > 0 && cands[i - 1].h < ty) { if (i < PLAN_MAX_CHECKS) cands[i] = cands[i - 1]; i--; }
+      cands[i] = { vx: vx, vy: vy, h: ty };
     }
   }
   if (!cands.length) return null;
-  cands.sort((a, b) => b.h - a.h);
 
   let best = null;
-  const n = Math.min(cands.length, PLAN_MAX_CHECKS);
+  const n = cands.length;
   for (let k = 0; k < n; k++) {
     const c = cands[k];
     // with no lookahead, candidates are sorted by height, so the first good one is the best
     if (best && depth === 1) break;
-    const hit = firstContact(world, self, x0, y0, c.vx, c.vy, T0, excludeId);
+    const hit = firstContact(world, self, x0, y0, c.vx, c.vy, T0, excludeId, field);
     if (!hit || !hit.onTop) continue;
     let value = Math.max(hit.peakBefore, hit.y + 1);
     if (depth > 1 && jumpsLeft > 1) {
@@ -81,12 +95,12 @@ function planJump(world, self, x0, y0, T0, depth, excludeId, jumpsLeft) {
  * Step a hypothetical arc forward on the sim's clock and report the first flea it touches.
  * Others are assumed to stay on their current arcs.
  */
-function firstContact(world, self, x0, y0, vx, vy, T0, excludeId) {
+function firstContact(world, self, x0, y0, vx, vy, T0, excludeId, field) {
   const P = PARAMETERS, W = world.width, dt = P.dt;
   const d2 = 4 * P.fleaRadius * P.fleaRadius;
   const tl = (vy + Math.sqrt(vy * vy + 2 * GRAVITY * y0)) / GRAVITY;
   const others = [], lands = [];
-  for (const o of world.fleas) {
+  for (const o of field || plannerField(world, x0, T0, tl)) {
     if (o === self || !o.airborne || o.id === excludeId) continue;
     others.push(o); lands.push(o.landTime());
   }

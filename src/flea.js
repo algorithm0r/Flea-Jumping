@@ -17,6 +17,7 @@ var Flea = class Flea {
     this.flightJumpOffs = 0;           // jump-offs in the current flight
     this.reachedK = false;             // reached heightK this flight (earns at most one flea)
     this.lastPartner = -1; this.lastContact = -1e9;
+    this.touchedTick = -1;             // made a contact this tick (one per flea per tick)
     this.target = -1;                  // strategic: id of the flea it means to land on
     this.flashUntil = -1;              // view hint: just jumped off someone
   }

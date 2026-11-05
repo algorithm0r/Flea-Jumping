@@ -3,6 +3,32 @@ Newest entry on top. **Append only — never edit past entries.**
 
 <!-- append new entries above this line -->
 
+## 2026-11-05 — scale to 10k fleas
+**Done:** Chris asked for a 10k max. Starting and max fleas now go to 10,000 and the ground to
+2,000 H. Made it affordable without changing a rule:
+- an air grid (cells >= 2r wide, rebuilt every tick): contacts are checked only within a cell
+  and its neighbour, and planners ask the grid for the fleas near them;
+- the planner's field is the nearest airborne fleas in range, capped at `planMaxTracked` (64).
+  Below the cap this is everyone who could matter, so plans are unchanged; in a crowd it is an
+  attention limit;
+- the planner keeps only its top 12 candidates instead of sorting all of them (the hot spot:
+  in a 10k swarm that is about 3,300 plans per step, about 3,000 candidates each);
+- above 1,500 fleas a lane draws squares and skips the aim lines.
+**Changed:** `src/world.js` (grid, near, collide/contactIn), `src/planner.js` (plannerField,
+top-k), `src/flea.js` (touchedTick), `src/observer.js`, `src/params.js`.
+**State:** smoke PASS. At defaults the top-k pick gives byte-identical stats to the sort it
+replaced. The grid changes contact ORDER, so trajectories differ from earlier runs but the
+statistics match (seed 1 mean peak 0.669 / 1.114, earlier 0.670 / 1.087). Timing, headless,
+per step of one world, measured from step 0 to 250 (the startup transient):
+- 2,000 fleas on 500 H: random 0.45 ms (was 20), strategic 7 ms (was 213)
+- 10,000 on 5,000 H (default density): random 1.9 ms, strategic 16 ms
+- 10,000 on 500 H: random 1.8 ms, strategic 44 ms
+- 10,000 on 20 H (a carpet, 500 fleas per H): random 2 ms, strategic 130 ms
+In the browser (hidden pane, so timed directly, both worlds per step after 300 warm-up steps):
+33 ms at 10k on 5,000 H, 71 ms at 10k on 500 H; drawing a frame takes about 3 ms.
+**Next:** the carpet case is still slow for strategic fleas. Ask Chris whether the ground
+should grow with the population, which keeps density fixed when fleas are added.
+
 ## 2026-11-05 — adding fleas over time
 **Done:** three independent switches, all stopped at `maxFleas` (default 200): a steady
 trickle (one flea every `addEvery`, the same arrivals in both worlds), one flea each time a

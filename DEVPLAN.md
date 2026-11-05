@@ -59,7 +59,9 @@
 `idea:`). When a stage takes an item up, strike it: `~~item~~ → **Stage N**`.*
 - [ ] idea: growth at height k: random stalls at 40 fleas for k=3 while strategic runs away;
       map the threshold k*(starting fleas) for each strategy
-- [ ] perf: strategic planning is ~N²; at 200 fleas ~3 ms/tick, so high speeds crawl
+- [x] ~~perf: strategic planning is ~N²~~ → air grid + planner attention span (2026-11-05)
+- [ ] perf: a dense 10k swarm still costs ~130 ms/step for strategic fleas (mid-air re-plans)
+- [ ] idea: grow the ground with the population so added fleas keep density fixed
 - [ ] idea: a jump-off cap of 1 raises the strategic mean peak (1.09 → 1.49 H); check whether
       mid-air re-plans are failing gambles (log predicted vs realised contacts)
 - [ ] idea: lookahead 2 gave no gain at default density (2026-11-05) — test it at high density

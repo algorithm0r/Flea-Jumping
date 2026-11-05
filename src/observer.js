@@ -5,6 +5,8 @@
 //
 // The scale is honest: x and y share one pixels-per-H, and the view zooms out when a flea
 // climbs past the top, so tall flights shrink the picture rather than leave it.
+var CROWD = 1500;   // above this many fleas a lane draws the cheap way
+
 var Observer = class Observer {
   constructor(worlds, colors) {
     this.worlds = worlds;
@@ -52,10 +54,11 @@ var Observer = class Observer {
     ctx.beginPath(); ctx.moveTo(X(0), ground + 0.5); ctx.lineTo(X(w.width), ground + 0.5); ctx.stroke();
 
     const rad = Math.max(2, PARAMETERS.fleaRadius * scale);
+    const crowd = w.fleas.length > CROWD;   // thousands of fleas: squares, no aim lines
 
     // who is aiming at whom (strategic only): a faint line to the intended platform
     ctx.strokeStyle = c.aim; ctx.globalAlpha = 0.35; ctx.lineWidth = 1;
-    for (const f of w.fleas) {
+    if (!crowd) for (const f of w.fleas) {
       if (!f.airborne || f.target < 0) continue;
       const t = w.fleas[f.target];
       if (!t.airborne) continue;
@@ -66,7 +69,9 @@ var Observer = class Observer {
 
     for (const f of w.fleas) {
       ctx.fillStyle = !f.airborne ? c.muted : (f.target >= 0 ? c.aim : c.fg);
-      ctx.beginPath(); ctx.arc(X(f.x), Y(f.y) - (f.airborne ? 0 : rad), rad, 0, TAU); ctx.fill();
+      const cy = Y(f.y) - (f.airborne ? 0 : rad);
+      if (crowd) { ctx.fillRect(X(f.x) - rad, cy - rad, 2 * rad, 2 * rad); continue; }
+      ctx.beginPath(); ctx.arc(X(f.x), cy, rad, 0, TAU); ctx.fill();
       if (w.time < f.flashUntil) {
         ctx.strokeStyle = c.jump; ctx.lineWidth = 1.6;
         ctx.beginPath(); ctx.arc(X(f.x), Y(f.y), rad + 3, 0, TAU); ctx.stroke();
