@@ -30,6 +30,7 @@ function buildControls() {
 function wireCharts(dm, worlds) {
   const dx = PARAMETERS.reportingPeriod * PARAMETERS.dt;   // chart x is sim time
   const pair = (key) => worlds.map((w, k) => ({ label: w.label, values: dm.series[k][key], color: WORLD_COLORS[k] }));
+  $('count').data = { dx: dx, series: pair('count') };
   $('record').data = { dx: dx, series: pair('record').concat([{ label: 'one jump', values: dm.oneJump, color: 'var(--cb-muted)' }]) };
   $('best').data = { dx: dx, series: pair('best').concat([{ label: 'one jump', values: dm.oneJump, color: 'var(--cb-muted)' }]) };
   $('mean').data = { dx: dx, series: pair('meanPeak') };

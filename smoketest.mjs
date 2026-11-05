@@ -46,7 +46,8 @@ const line = (name, r) => console.log(
   '  jumpOffs/flight=' + (r.w.jumpOffs / (r.n || 1)).toFixed(3) +
   '  mean=' + r.mean.toFixed(3) + '  p50=' + r.p50.toFixed(3) + '  p99=' + r.p99.toFixed(3) +
   '  >1H=' + (100 * r.above1).toFixed(1) + '%' +
-  '  record=' + r.w.record.toFixed(3) + '  chain=' + r.w.recordChain + '  (' + r.ms + ' ms)');
+  '  record=' + r.w.record.toFixed(3) + '  chain=' + r.w.recordChain +
+  '  fleas=' + r.w.fleas.length + ' (earned ' + JSON.stringify(r.w.added) + ')  (' + r.ms + ' ms)');
 console.log('flea-jumping smoke: ' + units + ' time units, ' + P.nFleas + ' fleas, width ' +
   P.worldWidth + ', r ' + P.fleaRadius + ', lookahead ' + P.lookahead + ', cap ' + P.maxJumpOffs + ', recoil ' + P.recoil + ', seed ' + P.seed);
 line('random', R);
@@ -58,7 +59,12 @@ const ok1 = [R, S].every((r) => r.w.jumpOffs > 0 || r.w.record <= 1 + 1e-9);
 const ok2 = R.n > 0 && S.n > 0;
 // (3) no flight makes more jump-offs than the cap allows
 const ok3 = [R, S].every((r) => r.w.recordChain <= P.maxJumpOffs);
-const ok = ok1 && ok2 && ok3;
+// (4) growth: off → population unchanged; never past maxFleas; trickle alone → both worlds equal
+const growing = P.growTrickle || P.growOnHeight || P.growOnRecord;
+const ok4 = [R, S].every((r) => growing ? r.w.fleas.length <= Math.max(P.maxFleas, P.nFleas)
+  : r.w.fleas.length === P.nFleas) &&
+  (!(P.growTrickle && !P.growOnHeight && !P.growOnRecord) || R.w.fleas.length === S.w.fleas.length);
+const ok = ok1 && ok2 && ok3 && ok4;
 console.log('invariants: height-needs-jump-offs=' + ok1 + ' flights-ran=' + ok2 +
-  ' chain<=cap=' + ok3 + ' -> ' + (ok ? 'PASS' : 'FAIL'));
+  ' chain<=cap=' + ok3 + ' growth=' + ok4 + ' -> ' + (ok ? 'PASS' : 'FAIL'));
 process.exit(ok ? 0 : 1);

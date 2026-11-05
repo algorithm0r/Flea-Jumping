@@ -11,6 +11,14 @@
 //               Off another flea, it plans again from the contact point, and with nothing to
 //               aim at it jumps straight up at full height.
 //
+// ADDING FLEAS: three independent switches, all stopped at maxFleas. A newcomer lands on a
+// random spot and rests before its first jump. Arrival spots come from their own random
+// stream, seeded the same in both worlds, so a steady trickle is identical in the two lanes;
+// the height and record rules are earned, so each world grows at its own pace.
+//   trickle — one flea every addEvery time units
+//   height  — one flea each time a flea reaches heightK·H, at most once per flight
+//   record  — one flea each time a flight lands with a new height record
+//
 // THE JUMP-OFF: when two airborne fleas touch, the higher one makes a brand-new jump from
 // that point (its old velocity is replaced), unless it has already used its maxJumpOffs for
 // this flight; then the two pass by each other. With recoil on, the lower one takes the equal
@@ -21,6 +29,7 @@ var World = class World {
     this.strategic = strategic;
     this.label = strategic ? 'strategic' : 'random';
     this.rng = makeRng(seed);
+    this.arrivalRng = makeRng(seed + 7919);   // newcomers' spots, separate from the jumping
     this.width = P.worldWidth;
     this.time = 0;
     this.tick = 0;
@@ -36,6 +45,9 @@ var World = class World {
     this.flights = 0;
     this.jumpOffs = 0;
     this.maxY = 0;            // highest flea right now
+    this.lastArrival = 0;     // trickle clock
+    this.pendingFleas = 0;    // earned this tick, added at the end of it
+    this.added = { trickle: 0, height: 0, record: 0 };
     this.resetPeriod();
   }
 
@@ -65,6 +77,9 @@ var World = class World {
       f.y = f.ay + f.avy * s - 0.5 * GRAVITY * s * s;
       f.vx = f.avx; f.vy = f.avy - GRAVITY * s;
       if (f.y > f.flightPeak) f.flightPeak = f.y;
+      if (P.growOnHeight && !f.reachedK && f.y >= P.heightK) {
+        f.reachedK = true; this.pendingFleas++; this.added.height++;
+      }
       if (f.y <= 0) this.land(f);
       else if (f.y > maxY) maxY = f.y;
     }
@@ -82,10 +97,25 @@ var World = class World {
       if (plan) { this.jumpFromGround(f, plan, plan.targetId); this.period.intercepts++; }
       else if (T - f.restUntil >= P.patience) this.jumpFromGround(f, this.randomVelocity(), -1);
     }
+
+    // 4. newcomers
+    if (P.growTrickle && T - this.lastArrival >= P.addEvery) {
+      this.lastArrival = T; this.pendingFleas++; this.added.trickle++;
+    }
+    for (; this.pendingFleas > 0; this.pendingFleas--) {
+      if (this.fleas.length >= P.maxFleas) { this.pendingFleas = 0; break; }
+      this.addFlea();
+    }
+  }
+
+  addFlea() {
+    const f = new Flea(this.fleas.length, this.arrivalRng() * this.width);   // id = index
+    f.restUntil = this.time + this.restTime();
+    this.fleas.push(f);
   }
 
   jumpFromGround(f, v, target) {
-    f.flightPeak = 0; f.flightJumpOffs = 0; f.target = target;
+    f.flightPeak = 0; f.flightJumpOffs = 0; f.reachedK = false; f.target = target;
     f.launch(f.x, 0, v.vx, v.vy, this.time);
   }
 
@@ -95,7 +125,10 @@ var World = class World {
     this.flights++;
     this.period.peaks.push(f.flightPeak);
     this.period.chains.push(f.flightJumpOffs);
-    if (f.flightPeak > this.record) this.record = f.flightPeak;
+    if (f.flightPeak > this.record) {
+      this.record = f.flightPeak;
+      if (PARAMETERS.growOnRecord) { this.pendingFleas++; this.added.record++; }
+    }
     if (f.flightJumpOffs > this.recordChain) this.recordChain = f.flightJumpOffs;
   }
 

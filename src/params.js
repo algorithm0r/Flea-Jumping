@@ -10,12 +10,20 @@ var PARAMETERS = {
   seed: 1,
 
   // --- fleas ---
-  nFleas: 40,           // fleas per world (each world gets the same number)
+  nFleas: 40,           // starting fleas per world (each world gets the same number)
   worldWidth: 20,       // length of the 1D ground, in H; the ground wraps (a ring)
   fleaRadius: 0.1,      // collision radius, in H; two fleas touch when 2r apart
   maxRange: 1.5,        // horizontal distance of a full-height jump at full sideways speed, in H
   minHeight: 0.25,      // a random jump's height is drawn from U(minHeight, 1)
   restMean: 1.0,        // mean time on the ground between jumps (exponential)
+
+  // --- adding fleas over time (each can be on or off; all stop at maxFleas) ---
+  growTrickle: false,   // add one flea every addEvery time units (same arrivals in both worlds)
+  addEvery: 2,          // time units between trickle arrivals
+  growOnHeight: false,  // add one flea each time a flea reaches heightK·H (once per flight)
+  heightK: 2,           // the height that earns a new flea, in H
+  growOnRecord: false,  // add one flea each time a flight sets a new height record
+  maxFleas: 200,        // no world grows past this many fleas
 
   // --- the jump-off ---
   recoil: true,         // the lower flea is kicked down by the upper flea's push (equal masses)
@@ -44,7 +52,7 @@ var PARAMETERS = {
 
 // Drives the control strip (CB.sim.controls). One entry per live-tunable.
 var PARAM_SCHEMA = [
-  { key: 'nFleas', label: 'Fleas per world', min: 5, max: 300, step: 5, resets: true },
+  { key: 'nFleas', label: 'Starting fleas', min: 5, max: 300, step: 5, resets: true },
   { key: 'worldWidth', label: 'Ground length (H)', min: 2, max: 60, step: 1, resets: true },
   { key: 'fleaRadius', label: 'Flea radius (H)', min: 0.02, max: 0.3, step: 0.01 },
   { key: 'maxRange', label: 'Max jump range (H)', min: 0, max: 6, step: 0.1 },
@@ -56,6 +64,12 @@ var PARAM_SCHEMA = [
     { value: 0, label: 'none' }, 1, 2, 3, 5, 10, { value: 1000, label: 'unlimited' }] },
   { key: 'recoil', label: 'Recoil' },
   { key: 'controlFullPush', label: 'Random fleas push off at full height' },
+  { key: 'growTrickle', label: 'Add fleas steadily' },
+  { key: 'addEvery', label: 'Time between arrivals', min: 0.5, max: 20, step: 0.5 },
+  { key: 'growOnHeight', label: 'Add a flea at height k' },
+  { key: 'heightK', label: 'k (H)', min: 1, max: 6, step: 0.25 },
+  { key: 'growOnRecord', label: 'Add a flea on each new record' },
+  { key: 'maxFleas', label: 'Max fleas', min: 10, max: 400, step: 10 },
   { key: 'updatesPerDraw', label: 'Speed', min: 1, max: 40, step: 1 },
   { key: 'seed', label: 'Seed', min: 1, max: 100, step: 1, resets: true },
 ];

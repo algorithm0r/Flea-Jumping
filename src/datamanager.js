@@ -14,6 +14,7 @@ var DataManager = class DataManager {
     this.series = worlds.map(() => ({
       record: [], best: [], meanPeak: [], perFlight: [], hist: [],
       chainRecord: [], chainBest: [],     // most jump-offs in one flight: all time / in window
+      count: [],                          // fleas in the world
       _peaks: [], _chains: [],            // sliding window: one entry per sample
     }));
     this.oneJump = [];                    // the 1 H reference line, same length as the rest
@@ -49,6 +50,7 @@ var DataManager = class DataManager {
     s.hist.push(bins);
     s.chainRecord.push(w.recordChain);
     s.chainBest.push(n ? chain : null);
+    s.count.push(w.fleas.length);
   }
 
   draw() {}

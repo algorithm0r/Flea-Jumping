@@ -3,6 +3,26 @@ Newest entry on top. **Append only — never edit past entries.**
 
 <!-- append new entries above this line -->
 
+## 2026-11-05 — adding fleas over time
+**Done:** three independent switches, all stopped at `maxFleas` (default 200): a steady
+trickle (one flea every `addEvery`, the same arrivals in both worlds), one flea each time a
+flea reaches `heightK`·H (at most once per flight), and one flea each time a flight lands with
+a new height record. Newcomers land on a random spot (their own seeded stream) and rest before
+their first jump. Added a "Fleas" line chart. "Starting fleas" replaces "Fleas per world".
+Chris turned down births from success with inherited strategy (too evolutionary for now).
+**Changed:** `src/params.js`, `src/flea.js` (reachedK), `src/world.js` (addFlea, step 4),
+`src/datamanager.js` (count), `src/ui.js`, `index.html`, `smoketest.mjs` (growth invariant).
+**State:** smoke PASS in every mode. Browser pane: height-k switched on live, 100 time units →
+random 53 fleas, strategic 200, chart matches, no console errors. Defaults, seed 1, 300 time
+units (final fleas random / strategic; "earned" counts flights past the cap too):
+- trickle every 2: 189 / 189; records 4.71 / 5.78; longest chains 41 / 39
+- height k=2: 200 / 200 (earned 455 / 1818); records 4.45 / 6.86
+- height k=3: 40 / 200. The random world never reaches 3 H at 40 fleas, so it never grows;
+  the strategic world runs away to the cap. A threshold in k between the two strategies.
+- new record: 59 / 57. Records get rarer as they rise, so growth slows.
+Cost: strategic world ≈ 3.3 ms/tick averaged over that k=2 run (most of it at 200 fleas).
+**Next:** the k=3 threshold looks like the interesting result: sweep k × starting fleas.
+
 ## 2026-11-05 — measure: most jump-offs in one flight
 **Done:** what Chris actually asked for (the cap above was a misreading he decided to keep as a
 mechanism). Each landed flight now reports its chain, meaning its jump-offs between ground and
