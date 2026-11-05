@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flea Jumping</title>
+<!-- Claude Basic, vendored and pinned (see DEVLOG for the version) -->
+<link rel="stylesheet" href="vendor/claude-basic.css">
+<script src="vendor/claude-basic.js"></script>
+<style>
+  .top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px var(--cb-gap) 0; }
+  .top .spacer { flex: 1; }
+  .top h1 { margin: 0; font-size: 20px; }
+  .top .note { color: var(--cb-muted); font-size: 12px; }
+  #gameWorld { width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1 class="cb-title">Flea Jumping<span class="cb-dot">.</span></h1>
+  <span class="note">random fleas above, strategic fleas below · same seed, same rules · heights in H, the one-jump maximum</span>
+  <span class="spacer"></span>
+  <span id="picker"></span>
+</div>
+
+<div class="cb-sim">
+  <div class="cb-sim-stage">
+    <div class="cb-sim-world"><canvas id="gameWorld" width="960" height="520"></canvas></div>
+    <div class="cb-sim-bar">
+      <cb-sim-clock id="clock" period="100" count size="84"></cb-sim-clock>
+      <cb-sim-legend><script type="application/json">[
+        {"label": "on the ground", "mark": "dot", "color": "var(--cb-muted)"},
+        {"label": "in the air", "mark": "dot", "color": "var(--cb-text)"},
+        {"label": "aiming at a flea", "mark": "dot", "color": "var(--cb-gold)"},
+        {"label": "just jumped off a flea", "mark": "ring", "color": "var(--cb-warn)"},
+        {"label": "one jump (1 H)", "mark": "dashed", "color": "var(--cb-muted)"},
+        {"label": "record", "mark": "line", "color": "var(--cb-accent)"}
+      ]</script></cb-sim-legend>
+    </div>
+    <div id="controls"></div>
+  </div>
+
+  <div class="cb-sim-charts">
+    <cb-sim-series id="record" label="Record height (H)" window="300" x-label="time" class="wide"></cb-sim-series>
+    <cb-sim-series id="best" label="Highest flight, last 10 time units (H)" window="300" x-label="time"></cb-sim-series>
+    <cb-sim-series id="mean" label="Mean flight peak (H)" window="300" x-label="time"></cb-sim-series>
+    <cb-sim-series id="offs" label="Jump-offs per flight" window="300" x-label="time"></cb-sim-series>
+    <div class="cb-sim-group" style="--cols:2">
+      <div class="cb-label">Flight peaks, last 10 time units</div>
+      <cb-sim-histmap id="histR" label="random" window="300" lo="0" hi="6" x-label="time" color="var(--cb-series-2)"></cb-sim-histmap>
+      <cb-sim-histmap id="histS" label="strategic" window="300" lo="0" hi="6" x-label="time" color="var(--cb-series-1)"></cb-sim-histmap>
+    </div>
+  </div>
+</div>
+
+<!-- sim core, in dependency order; main.js last -->
+<script src="src/util.js"></script>
+<script src="src/params.js"></script>
+<script src="src/engine.js"></script>
+<script src="src/flea.js"></script>
+<script src="src/planner.js"></script>
+<script src="src/world.js"></script>
+<script src="src/observer.js"></script>
+<script src="src/datamanager.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
