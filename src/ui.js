@@ -27,9 +27,13 @@ function buildControls() {
   });
 }
 
+// Each line chart's legend carries its lines' latest values ("random 40 · strategic 57").
+// Heights read to two decimals, counts as whole numbers.
+var LIVE_CHARTS = { count: 0, record: 2, best: 2, mean: 2, offs: 2, chainRecord: 0, chainBest: 0 };
+
 function wireCharts(dm, worlds) {
   const dx = PARAMETERS.reportingPeriod * PARAMETERS.dt;   // chart x is sim time
-  const pair = (key) => worlds.map((w, k) => ({ label: w.label, values: dm.series[k][key], color: WORLD_COLORS[k] }));
+  const pair = (key) => worlds.map((w, k) => ({ label: w.label, name: w.label, values: dm.series[k][key], color: WORLD_COLORS[k] }));
   $('count').data = { dx: dx, series: pair('count') };
   $('record').data = { dx: dx, series: pair('record').concat([{ label: 'one jump', values: dm.oneJump, color: 'var(--cb-muted)' }]) };
   $('best').data = { dx: dx, series: pair('best').concat([{ label: 'one jump', values: dm.oneJump, color: 'var(--cb-muted)' }]) };
@@ -42,12 +46,26 @@ function wireCharts(dm, worlds) {
   for (const id of ['histR', 'histS']) { $(id).setAttribute('hi', PARAMETERS.histTop); }
 }
 
-// browser-only entity: keeps the dial and the world's colours current
+function refreshLegends() {
+  for (const id in LIVE_CHARTS) {
+    const el = $(id), d = el.data;
+    for (const s of d.series) {
+      if (!s.name) continue;   // reference lines keep their plain name
+      let v = null;
+      for (let i = s.values.length - 1; i >= 0 && v == null; i--) v = s.values[i];
+      s.label = v == null ? s.name : s.name + ' ' + v.toFixed(LIVE_CHARTS[id]);
+    }
+    el.data = d;   // re-renders the head
+  }
+}
+
+// browser-only entity: keeps the dial, the legends' latest values and the world's colours current
 var UiPump = class UiPump {
-  constructor(world, observer) { this.world = world; this.observer = observer; this.frame = 0; }
+  constructor(world, observer, dm) { this.world = world; this.observer = observer; this.dm = dm; this.frame = 0; this.seen = -1; }
   update() {}
   draw() {
     $('clock').value = this.world.time;
+    if (this.dm.oneJump.length !== this.seen) { this.seen = this.dm.oneJump.length; refreshLegends(); }
     if (++this.frame % 60 === 0) this.observer.c = worldColors();   // follows a theme change
   }
 };

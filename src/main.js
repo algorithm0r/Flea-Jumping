@@ -11,7 +11,7 @@ function reset() {
   for (const w of worlds) gameEngine.add(w);
   gameEngine.add(dataManager);
   gameEngine.add(observer);
-  gameEngine.add(new UiPump(worlds[0], observer));
+  gameEngine.add(new UiPump(worlds[0], observer, dataManager));
   wireCharts(dataManager, worlds);
 }
 

@@ -38,18 +38,28 @@ var Observer = class Observer {
     ctx.save();
     if (top > 0) { ctx.strokeStyle = c.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(cw, top + 0.5); ctx.stroke(); }
 
-    ctx.fillStyle = c.muted; ctx.font = '600 12px system-ui, sans-serif';
-    ctx.fillText(w.label, 10, top + 18);
+    // the lane's name and its two headline numbers
+    ctx.font = '600 15px system-ui, sans-serif';
+    ctx.fillStyle = c.fg; ctx.fillText(w.label, 10, top + 20);
+    const nameW = ctx.measureText(w.label).width;
+    ctx.font = '15px system-ui, sans-serif'; ctx.fillStyle = c.fg;
+    ctx.fillText(w.fleas.length + ' fleas · record ' + w.record.toFixed(2) + ' H', 20 + nameW, top + 20);
 
     // reference lines: one full jump (dashed), this world's record (solid)
     ctx.lineWidth = 1;
     ctx.strokeStyle = c.muted; ctx.setLineDash([4, 4]);
     ctx.beginPath(); ctx.moveTo(X(0), Y(1)); ctx.lineTo(X(w.width), Y(1)); ctx.stroke();
     ctx.setLineDash([]);
+    ctx.font = '13px system-ui, sans-serif'; ctx.textAlign = 'right';
+    ctx.fillStyle = c.muted; ctx.fillText('1 H', X(w.width) - 2, Y(1) - 4);
     if (w.record > 0 && Y(w.record) > top) {
       ctx.strokeStyle = c.record;
       ctx.beginPath(); ctx.moveTo(X(0), Y(w.record)); ctx.lineTo(X(w.width), Y(w.record)); ctx.stroke();
+      // tag below the line when it would crowd the 1 H tag
+      const ty = Math.abs(Y(w.record) - Y(1)) < 16 ? Y(w.record) + 14 : Y(w.record) - 4;
+      ctx.fillStyle = c.record; ctx.fillText('record ' + w.record.toFixed(2) + ' H', X(w.width) - 2, ty);
     }
+    ctx.textAlign = 'left';
     ctx.strokeStyle = c.fg; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(X(0), ground + 0.5); ctx.lineTo(X(w.width), ground + 0.5); ctx.stroke();
 

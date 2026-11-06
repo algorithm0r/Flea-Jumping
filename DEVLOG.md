@@ -3,6 +3,17 @@ Newest entry on top. **Append only — never edit past entries.**
 
 <!-- append new entries above this line -->
 
+## 2026-11-05 — live labels
+**Done:** Chris asked for labels on the current numbers. Each lane's header now reads
+"<world>  N fleas · record X.XX H"; the record line and the 1 H line carry tags at their right
+end (the record tag drops below its line when the two would collide). Every line chart's
+legend carries its lines' latest values ("random 40 · strategic 57"), refreshed once per
+reporting period; heights to two decimals, counts whole. Chris: keep the ground fixed as
+fleas are added (no ground growth).
+**Verified:** smoke PASS (100 units); in the pane after 1,500 manual steps, all seven legends
+show values, no console errors, lane header legible in the dark theme (screenshot).
+**Next:** none queued.
+
 ## 2026-11-05 — public on GitHub
 **Done:** Chris asked for a public version. Repo https://github.com/algorithm0r/Flea-Jumping
 (public), GitHub Pages serving `main` at /, and the About website set to
