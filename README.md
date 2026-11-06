@@ -7,6 +7,7 @@ can they get? Two populations run side by side with the same rules and seed: **r
 the air. Design and math: `DEVPLAN.md`, "The model".
 
 ## Run
+- **Live:** https://algorithm0r.github.io/Flea-Jumping/ (GitHub Pages, serves `main`).
 - **Browser:** http://localhost:8000/research/Flea%20Jumping/sim/ (the always-on Static
   Server), or open `index.html` directly.
 - **Smoke test:** `node smoketest.mjs [timeUnits] [key=value ...]`, e.g.

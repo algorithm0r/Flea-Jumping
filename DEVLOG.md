@@ -3,6 +3,17 @@ Newest entry on top. **Append only — never edit past entries.**
 
 <!-- append new entries above this line -->
 
+## 2026-11-05 — public on GitHub
+**Done:** Chris asked for a public version. Repo https://github.com/algorithm0r/Flea-Jumping
+(public), GitHub Pages serving `main` at /, and the About website set to
+https://algorithm0r.github.io/Flea-Jumping/. Pushed the five commits as they were; no file
+changed for the release. This is the first public repo to ship the Claude Basic kit
+(`vendor/`, 0.6.0 dist); its comments name Pulse and the Media Dashboard.
+**Verified:** Pages build `built`; `/`, `src/world.js` and `vendor/claude-basic.js` return 200;
+the live page loads with no console errors, and 500 manual steps advance both worlds (the
+pane was hidden, so rAF was paused, as before).
+**Next:** unchanged: Chris's call on growing the ground with the population.
+
 ## 2026-11-05 — scale to 10k fleas
 **Done:** Chris asked for a 10k max. Starting and max fleas now go to 10,000 and the ground to
 2,000 H. Made it affordable without changing a rule:

@@ -16,7 +16,8 @@ Prototype runs: random and strategic worlds side by side, live charts. Smoke PAS
 - record: random 2.7–3.2 H, strategic 4.0–4.2 H
 
 ## Branches
-- `main`
+- `main` (pushed; public at github.com/algorithm0r/Flea-Jumping, live at
+  https://algorithm0r.github.io/Flea-Jumping/)
 
 ## Open
 - Does lookahead 2 ever help? (no gain at the densities tried)
